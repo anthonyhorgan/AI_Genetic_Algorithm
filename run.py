@@ -3,47 +3,6 @@ import copy
 from matplotlib import pyplot as plt
 
 
-def main1():
-    ga = MaxOneGA(4, 10, crossover_prob=1, mutation_prob=0.0)
-    init_pop = copy.deepcopy(ga.population)
-    ga.crossover()
-    pop = ga.population
-    for initial, crossed in zip(init_pop, pop):
-        print(initial, crossed)
-    print()
-    for initial in init_pop:
-        print(initial)
-    print()
-    for entry in pop:
-        print(entry)
-    l = [1,2,3,4,5,6,7,8]
-
-
-def fitness(individual):
-    return sum(individual, 1)
-
-
-def train_debug(algorithm, num_generations):
-    fitness_scores = []
-    print("population")
-    for individual in algorithm.get_population():
-        print(individual)
-    print()
-    for generation in range(num_generations):
-        algorithm.evaluate_population()
-        # stop training loop when at least one member of the population reaches the optimal fitness score
-        # if gen_alg.get_population()[0].fitness_score >= optimal_fitness:
-        #     break
-        population_fitness = algorithm.mean_population_fitness()
-        algorithm.select()
-        algorithm.mutate()
-        algorithm.crossover()
-        fitness_scores.append(population_fitness)
-        print(f"Iteration {generation + 1}\tMean Fitness: {population_fitness:.2f}")
-
-    return algorithm, fitness_scores
-
-
 def train(algorithm, num_generations, verbose=True):
     fitness_scores = {"best": [], "mean": [], "worst": []}
     for generation in range(num_generations):
@@ -63,25 +22,6 @@ def train(algorithm, num_generations, verbose=True):
             print(f"Iteration {generation + 1} \tMean Fitness: {fitness_scores['mean'][-1]:.2f}")
 
     return algorithm, fitness_scores
-
-
-def train_maxone(num_generations):
-    gen_alg = MaxOneGA(100, 20, crossover_prob=0.8, mutation_prob=0.01, tournament_size=10)
-    optimal_fitness = 20
-    fitness_scores = []
-    for generation in range(num_generations):
-        gen_alg.evaluate_population()
-        # stop training loop when at least one member of the population reaches the optimal fitness score
-        # if gen_alg.get_population()[0].fitness_score >= optimal_fitness:
-        #     break
-        population_fitness = gen_alg.mean_population_fitness()
-        gen_alg.select()
-        gen_alg.mutate()
-        gen_alg.crossover()
-        fitness_scores.append(population_fitness)
-        print(f"Iteration {generation + 1}\tMean Fitness: {population_fitness:.2f}")
-
-    return gen_alg, fitness_scores
 
 
 def plot_fitness(fitness_scores, output_path=None, show=False, include=["best", "worst", "mean"]):
@@ -154,9 +94,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
 
 
 
