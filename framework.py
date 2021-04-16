@@ -15,7 +15,6 @@ class ListPopulation(list):
     values = None
 
 
-# TODO add abstract class
 class ListChromosome(list):
     '''
     A chromosome whose genes are stored in a list
@@ -129,7 +128,7 @@ class ListStringGA(AbstractGA, ABC):
         new_population = []
         population = self.get_population()
         for i in range(self.num_elite):
-            new_population.append(population.pop(0))
+            new_population.append(population[0])
         # tournament selection with replacement
         for tourney_counter in range(len(self.population) - self.num_elite):
             contestants = random.sample(self.population, self.tournament_size)
@@ -223,6 +222,78 @@ class KnapSackGA(ListStringGA):
         self.weight_list = weight_list
         self.value_list = value_list
 
+    def fitness(self, chromosome):
+        # if total weight of items < max weight, then fitness = the sum of values of all items in the sacke
+        # if total weight of items > max_weight, the fitness = 0
+        included_items = []
+        for idx, is_included in enumerate(chromosome):
+            if is_included:
+                included_items.append(idx)
+        total_value = sum([self.value_list[item_idx] for item_idx in included_items])
+        total_weight = sum([self.weight_list[item_idx] for item_idx in included_items])
+        if total_weight > self.max_weight:
+            return 0
+        else:
+            return total_value
+
+
+class KnapSackGASwap(KnapSackGA):
+    '''
+    GA for knapsack problem which uses a different mutate function
+    '''
+    def mutate(self):
+        for i in range(len(self.population)):
+            chromosome = self.population[i]
+            if np.random.rand() < self.mutation_prob:
+                # perform swap mutation
+                # take one item out and replace it with another item
+                if len(set(chromosome)) == 1:
+                    # if either no items or all items are included then skip
+                    continue
+
+                zero_indices = [i for i in range(len(chromosome)) if chromosome[i] == 0]
+                one_indices = [i for i in range(len(chromosome)) if chromosome[i] == 1]
+                zero_choice = random.choice(zero_indices)
+                one_choice = random.choice(one_indices)
+                chromosome[zero_choice] = 1
+                chromosome[one_choice] = 0
+
+
+class KnapSackGAUniform(KnapSackGA):
+    '''
+    GA for the Knapsack problem using uniform crossover
+    '''
+    def crossover(self):
+        # perform uniform crossover on a random subset of the population
+        parent_pool = random.sample(self.population, int(math.floor(len(self.population) * self.crossover_prob)))
+        while len(parent_pool) > 1:
+            father = parent_pool.pop(0)
+            mother = random.choice(parent_pool)
+            parent_pool.remove(mother)
+
+            # create new chromosome objects
+            son = ListChromosome.empty(father.chrom_length, father.valid_values)
+            daughter = ListChromosome.empty(father.chrom_length, father.valid_values)
+            # for each gene (entry in the list), there is a 50% chance that the son will receive the fathers gene and
+            # a 50% chance that it will receive the mothers gene
+            for i, (father_gene, mother_gene) in enumerate(zip(father, mother)):
+                if np.random.rand() < 0.5:
+                    son[i] = mother_gene
+                    daughter[i] = father_gene
+                else:
+                    son[i] = father_gene
+                    daughter[i] = mother_gene
+
+            father_index = self.population.index(father)
+            self.population[father_index] = son
+            mother_index = self.population.index(mother)
+            self.population[mother_index] = daughter
+
+
+class KnapSackGAUniformSwap(KnapSackGA):
+    '''
+    GA for knapsack problem which uses uniform crossover and the swap mutation
+    '''
     def crossover(self):
         # perform uniform crossover on a random subset of the population
         parent_pool = random.sample(self.population, int(math.floor(len(self.population) * self.crossover_prob)))
@@ -250,48 +321,21 @@ class KnapSackGA(ListStringGA):
             self.population[mother_index] = daughter
 
     def mutate(self):
-        # 50% to perform standard mutation (flip a bit)
-        # 50% to take an item out of the sack and replace it with another one
         for i in range(len(self.population)):
             chromosome = self.population[i]
             if np.random.rand() < self.mutation_prob:
-                if np.random.rand() < 0.5:
-                    print(f"flip mutation")
-                    # perform standard mutation
-                    gene_choice = random.choice([j for j in range(len(chromosome))])  # select gene to flip
-                    current_value = chromosome[gene_choice]
-                    if current_value == 0:
-                        chromosome[gene_choice] = 1
-                    else:
-                        chromosome[gene_choice] = 0
-                else:
-                    print(f"swap mutation")
-                    # perform swap mutation
-                    # take one item out and replace it with another item
-                    if len(set(chromosome)) == 1:
-                        # if either no items or all items are included then skip
-                        continue
+                # perform swap mutation
+                # take one item out and replace it with another item
+                if len(set(chromosome)) == 1:
+                    # if either no items or all items are included then skip
+                    continue
 
-                    zero_indices = [i for i in range(len(chromosome)) if chromosome[i] == 0]
-                    one_indices = [i for i in range(len(chromosome)) if chromosome[i] == 1]
-                    zero_choice = random.choice(zero_indices)
-                    one_choice = random.choice(one_indices)
-                    chromosome[zero_choice] = 1
-                    chromosome[one_choice] = 0
-
-    def fitness(self, chromosome):
-        # if total weight of items < max weight, then fitness = the sum of values of all items in the sacke
-        # if total weight of items > max_weight, the fitness = 0
-        included_items = []
-        for idx, is_included in enumerate(chromosome):
-            if is_included:
-                included_items.append(idx)
-        total_value = sum([self.value_list[item_idx] for item_idx in included_items])
-        total_weight = sum([self.weight_list[item_idx] for item_idx in included_items])
-        if total_weight > self.max_weight:
-            return 0
-        else:
-            return total_value
+                zero_indices = [i for i in range(len(chromosome)) if chromosome[i] == 0]
+                one_indices = [i for i in range(len(chromosome)) if chromosome[i] == 1]
+                zero_choice = random.choice(zero_indices)
+                one_choice = random.choice(one_indices)
+                chromosome[zero_choice] = 1
+                chromosome[one_choice] = 0
 
 
 
